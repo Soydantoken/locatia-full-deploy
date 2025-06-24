@@ -1,1 +1,102 @@
-Locatia Admin Panel - Full İçerik
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Locatia Admin Panel - Full İçerik</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .container { max-width: 800px; margin-top: 50px; }
+    table { background: #fff; }
+  </style>
+</head>
+<body>
+  <script>
+    const currentPage = window.location.pathname;
+    if (currentPage.includes("admin")) {
+      const password = prompt("Admin paneline erişmek için şifre girin:");
+      if (password !== "2580") {
+        document.body.innerHTML = '<h2 style="color:red;text-align:center;margin-top:20%">Yetkisiz giriş<br><small>Admin paneline erişim reddedildi.</small></h2>';
+        throw new Error("Unauthorized access");
+      }
+    }
+  </script>
+
+  <div class="container">
+    <h2 class="text-center mb-4">Locatia Admin Panel</h2>
+    <div class="mb-3 text-end">
+      <button class="btn btn-danger" onclick="clearLogs()">Tüm Kayıtları Sil</button>
+      <button class="btn btn-secondary" onclick="exportToPDF()">PDF Aktar</button>
+    </div>
+    <table class="table table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Zaman</th>
+          <th scope="col">IP</th>
+          <th scope="col">Koordinatlar</th>
+          <th scope="col">Konum</th>
+          <th scope="col">İSS</th>
+        </tr>
+      </thead>
+      <tbody id="log-body"></tbody>
+    </table>
+    <p class="text-end"><strong>Toplam:</strong> <span id="log-count">0</span> kayıt</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    async function loadLogs() {
+      const response = await fetch("/log");
+      const logs = await response.json();
+      const tbody = document.getElementById("log-body");
+      document.getElementById("log-count").innerText = logs.length;
+      tbody.innerHTML = "";
+
+      logs.forEach(entry => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${entry.Zaman}</td>
+          <td>${entry.IP}</td>
+          <td>${entry.Koordinatlar.latitude}, ${entry.Koordinatlar.longitude}</td>
+          <td>${entry.Şehir}, ${entry.Bölge}, ${entry.Ülke}</td>
+          <td>${entry.Sağlayıcı}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function clearLogs() {
+      const confirmClear = confirm("Tüm kayıtları kalıcı olarak silmek istediğinize emin misiniz?");
+      if (!confirmClear) return;
+      await fetch("/log", { method: "DELETE" });
+      loadLogs();
+    }
+
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 10;
+      doc.text("Locatia Log Kayıtları", 10, y);
+      y += 10;
+
+      const rows = document.querySelectorAll("#log-body tr");
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("td");
+        const text = Array.from(cols).map(td => td.textContent).join(" | ");
+        doc.text(text, 10, y);
+        y += 8;
+        if (y > 270) {
+          doc.addPage();
+          y = 10;
+        }
+      });
+
+      doc.save("locatia_kayitlari.pdf");
+    }
+
+    window.onload = loadLogs;
+  </script>
+</body>
+</html>
