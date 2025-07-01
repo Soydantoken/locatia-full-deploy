@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Locatia Canlı Takip Haritası</title>
+    <style>
+      html, body, #map { height: 100%; margin: 0; padding: 0; }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_R911nnXtjrC2s7zM_A5Dz4yieeEB61o"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const uid = new URLSearchParams(window.location.search).get('uid') || 'locatia_engin_20250701';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyC6zrIlOD4-7dYGTqMYT7aPI1jj19P112PM",
+        authDomain: "locatia-tracker.firebaseapp.com",
+        databaseURL: "https://locatia-tracker-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "locatia-tracker",
+        storageBucket: "locatia-tracker.appspot.com",
+        messagingSenderId: "547895294949",
+        appId: "1:547895294949:web:daebfbe0f3a8ac76538d0c"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 15,
+        center: { lat: 39.92, lng: 32.85 }
+      });
+
+      function showMarker(lat, lng) {
+        new google.maps.Marker({
+          position: { lat, lng },
+          map,
+          title: "Son Konum"
+        });
+        map.setCenter({ lat, lng });
+      }
+
+      db.ref("konumlar/" + uid).on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.lat && data.lng) {
+          const lat = parseFloat(data.lat);
+          const lng = parseFloat(data.lng);
+          showMarker(lat, lng);
+        }
+      });
+    </script>
+  </body>
+</html>
